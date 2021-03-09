@@ -1,47 +1,47 @@
+//Jeffrey Andersen
+
 class Star {
-  float x; //using polar coordinates may have been better
-  float y;
-  float z;
-  float r;
+  PVector pos = new PVector(); //polar coordinates may have been better
+  float r; //radius
   int age = 2;
   Tail tail;
   
   Star(boolean areTails, int tailLength) {
-    x = random(-width / age, width / age);
-    y = random(-height / age, height / age);
-    while (x == 0) {
-      x = random(-width / age, width / age);
+    pos.x = random(-width / age, width / age);
+    pos.y = random(-height / age, height / age);
+    while (pos.x == 0) {
+      pos.x = random(-width / age, width / age);
     }
-    while (y == 0) {
-      y = random(-height / age, height / age);
+    while (pos.y == 0) {
+      pos.y = random(-height / age, height / age);
     }
-    z = random(1.003, 1.03);
+    pos.z = random(1.003, 1.03);
     r = random(8, 10);
-    tail = new Tail(areTails, tailLength, z, r);
+    tail = new Tail(areTails, tailLength, pos.z, r);
   }
   
   void update() {
-    tail.update(x, y, r);
-    if (x <= -width || x >= width || y <= -height || y >= height) {
+    tail.update(pos.x, pos.y, r);
+    if (pos.x <= -width || pos.x >= width || pos.y <= -height || pos.y >= height) {
       if (age < 8) {
         age++;
       }
-      x = random(-width / age, width / age);
-      y = random(-height / age, height / age);
-      while (x == 0) {
-        x = random(-width / age, width / age);
+      pos.x = random(-width / age, width / age);
+      pos.y = random(-height / age, height / age);
+      while (pos.x == 0) {
+        pos.x = random(-width / age, width / age);
       }
-      while (y == 0) {
-        y = random(-height / age, height / age);
+      while (pos.y == 0) {
+        pos.y = random(-height / age, height / age);
       }
-      z = random(1.003, 1.03); //<>//
+      pos.z = random(1.003, 1.03); //<>//
       r = random(8, 10);
-      tail = new Tail(areTails, tailLength, z, r);
+      tail = new Tail(areTails, tailLength, pos.z, r);
     }
     else {
-      x *= z;
-      y *= z;
-      r *= (z * z - 1) * 0.08 + 1;
+      pos.x *= pos.z;
+      pos.y *= pos.z;
+      r *= (pos.z * pos.z - 1) * 0.08 + 1;
     }
   }
   
@@ -49,6 +49,6 @@ class Star {
     tail.show(); //<>//
     fill(255);
     noStroke();
-    ellipse(x, y, r, r);
+    ellipse(pos.x, pos.y, r, r);
   }
 }

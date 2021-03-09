@@ -1,8 +1,10 @@
+//Jeffrey Andersen
+
 class Tail {
   float[] Xs;
   float[] Ys;
-  float z;
-  float r;
+  float z; //depth
+  float r; //radius
   int index;
   boolean isTail;
   
