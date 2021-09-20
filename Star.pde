@@ -1,54 +1,119 @@
 //Jeffrey Andersen
 
 class Star {
-  PVector pos = new PVector(); //polar coordinates may have been better
   float r; //radius
-  int age = 2;
+  float initialRadius;
+  PVector pos; //position
   Tail tail;
-  
-  Star(boolean areTails, int tailLength) {
-    pos.x = random(-width / age, width / age);
-    pos.y = random(-height / age, height / age);
-    while (pos.x == 0) {
-      pos.x = random(-width / age, width / age);
+  boolean showStar;
+  float endpointDistance; //the distance to the origin from where the star began its life (if outward-bound) and/or where it will end (if inward-bound)
+
+  Star() {
+    r = random(minRadius, maxRadius);
+    initialRadius = r;
+    pos = new PVector(0, 0, random(averageSpeed - speedSpan / 2, averageSpeed + speedSpan / 2));
+    while (pos.z == 1) {
+      pos.z = random(averageSpeed - speedSpan / 2, averageSpeed + speedSpan / 2);
     }
-    while (pos.y == 0) {
-      pos.y = random(-height / age, height / age);
+    int tailLength = averageTailLength + int(random(-averageTailLengthVariance, averageTailLengthVariance));
+    PVector initialPosition;
+    if (pos.z < 1) {
+      initialPosition = PVector.random2D().mult(sqrt(sq(width + r) + sq(height + r))); //star's heading is random
+      endpointDistance = -random(min(-width, -height), 0);
+    } else { //pos.z > 1
+      initialPosition = PVector.random2D().mult(-random(min(-width, -height), 0)); //star's heading is random
+      endpointDistance = initialPosition.mag();
     }
-    pos.z = random(1.003, 1.03);
-    r = random(8, 10);
-    tail = new Tail(areTails, tailLength, pos.z, r);
+    pos.x = initialPosition.x;
+    pos.y = initialPosition.y;
+    tail = new Tail(tailLength, pos.z, r);
+    showStar = true;
   }
-  
-  void update() {
-    tail.update(pos.x, pos.y, r);
-    if (pos.x <= -width || pos.x >= width || pos.y <= -height || pos.y >= height) {
-      if (age < 8) {
-        age++;
-      }
-      pos.x = random(-width / age, width / age);
-      pos.y = random(-height / age, height / age);
-      while (pos.x == 0) {
-        pos.x = random(-width / age, width / age);
-      }
-      while (pos.y == 0) {
-        pos.y = random(-height / age, height / age);
-      }
-      pos.z = random(1.003, 1.03); //<>//
-      r = random(8, 10);
-      tail = new Tail(areTails, tailLength, pos.z, r);
-    }
-    else {
+
+
+  private void decay() {
+    showStar = false;
+    tail.decay(pos, r); //tails get updated even if not areTails in case tails are turned back on
+    if (tail.tailEndIndex > tail.lastIndexToDraw) {
+      this.reset();
+    } else {
       pos.x *= pos.z;
       pos.y *= pos.z;
-      r *= (pos.z * pos.z - 1) * 0.08 + 1;
+      r = initialRadius * sq(pos.dist(new PVector(0, 0, pos.z)));
     }
   }
-  
+
+  private void reset() {
+    r = random(minRadius, maxRadius);
+    initialRadius = r;
+    pos.z = random(averageSpeed - speedSpan / 2, averageSpeed + speedSpan / 2);
+    while (pos.z == 1) {
+      pos.z = random(averageSpeed - speedSpan / 2, averageSpeed + speedSpan / 2);
+    }
+    int tailLength = averageTailLength + int(random(-averageTailLengthVariance, averageTailLengthVariance));
+    PVector initialPosition;
+    if (pos.z < 1) {
+      initialPosition = PVector.random2D().mult(sqrt(sq(width + r) + sq(height + r))); //star's heading is random
+      endpointDistance = -random(min(-width, -height), 0);
+    } else { //pos.z > 1
+      initialPosition = PVector.random2D().mult(-random(min(-width, -height), 0)); //star's heading is random
+      endpointDistance = initialPosition.mag();
+    }
+    pos.x = initialPosition.x;
+    pos.y = initialPosition.y;
+    tail = new Tail(tailLength, pos.z, r);
+    showStar = true;
+  }
+
+  private void updateHelper() {
+    tail.update(pos, r); //tails get updated even if not areTails in case tails are turned back on
+    pos.x *= pos.z;
+    pos.y *= pos.z;
+    r = initialRadius * sq(pos.dist(new PVector(0, 0, pos.z)));
+  }
+
+  void update() {
+    if (pos.z < 1) { //star is moving inward
+      if (tail.tailEndIndex < tail.tailSegmentsCoordinates.length) {
+        if (pos.mag() < endpointDistance) { //if star has reached its end point
+          this.decay();
+        } else {
+          this.updateHelper();
+        }
+      } else {
+        if (pos.mag() < endpointDistance) { //if star has reached its end point
+          this.decay();
+        } else {
+          this.updateHelper();
+        }
+      }
+    } else { //if star is moving outward; pos.z > 1
+      showStar = true;
+      if (tail.tailEndIndex < tail.tailSegmentsCoordinates.length) {
+        if (tail.tailSegmentsCoordinates[tail.tailEndIndex].x < -width / 2 || tail.tailSegmentsCoordinates[tail.tailEndIndex].x > width / 2 || tail.tailSegmentsCoordinates[tail.tailEndIndex].y < -height / 2 || tail.tailSegmentsCoordinates[tail.tailEndIndex].y > height / 2) {
+          this.reset();
+        } else {
+          this.updateHelper();
+        }
+      } else {
+        if (pos.x < -width / 2 - r || pos.x > width / 2 + r || pos.y < -height / 2 - r || pos.y > height / 2 + r) {
+          this.reset();
+        } else {
+          this.updateHelper();
+        }
+      }
+    }
+  }
+
+
   void show() {
-    tail.show(); //<>//
-    fill(255);
-    noStroke();
-    ellipse(pos.x, pos.y, r, r);
+    if (areTails) {
+      tail.show();
+    }
+    if (showStar) {
+      fill(255); //future consideration: allow for customizing star color
+      noStroke();
+      circle(pos.x, pos.y, r * 2); //drawn on top of (after) the tail
+    }
   }
 }
